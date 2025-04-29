@@ -1,13 +1,17 @@
 import streamlit as st
 import pandas as pd
 
+st.title("UEFA Champions League Winners Analysis")
+
 # --- Load data ---
+st.header("Loading and Cleaning Data")
 @st.cache_data
 def load_data():
     url = "https://pl.wikipedia.org/wiki/Liga_Mistrz%C3%B3w_UEFA"
     tables = pd.read_html(url, match="Sezon")
     winners_table = tables[0]  # First table on the page
     winners_table.rename(columns={"Zwycięzca": "Winner"}, inplace=True)
+    winners_table.dropna(inplace=True)
     return winners_table
 
 # Load the dataset
