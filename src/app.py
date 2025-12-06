@@ -1,17 +1,36 @@
 import streamlit as st
 import pandas as pd
 
-st.title("UEFA Champions League Winners Analysis")
-
 # --- Load data ---
-st.header("Loading and Cleaning Data")
 @st.cache_data
 def load_data():
-    url = "https://pl.wikipedia.org/wiki/Liga_Mistrz%C3%B3w_UEFA"
-    tables = pd.read_html(url, match="Sezon")
-    winners_table = tables[0]  # First table on the page
-    winners_table.rename(columns={"Zwycięzca": "Winner"}, inplace=True)
-    winners_table.dropna(inplace=True)
+    url = "https://en.wikipedia.org/wiki/List_of_European_Cup_and_UEFA_Champions_League_finals"
+    # Add User-Agent header to avoid 403 Forbidden error
+    tables = pd.read_html(
+        url,
+        storage_options={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    )
+    
+    # Find table with winners information
+    for table in tables:
+        if 'Season' in table.columns or 'Winners' in table.columns:
+            winners_table = table
+            break
+    
+    # Standardize column names
+    column_mapping = {}
+    for col in winners_table.columns:
+        col_lower = str(col).lower()
+        if 'season' in col_lower:
+            column_mapping[col] = 'Season'
+        elif 'winner' in col_lower:
+            column_mapping[col] = 'Winner'
+    
+    winners_table.rename(columns=column_mapping, inplace=True)
+    
+    if 'Winner' in winners_table.columns:
+        winners_table.dropna(subset=['Winner'], inplace=True)
+    
     return winners_table
 
 # Load the dataset
@@ -37,9 +56,9 @@ if st.button("Check"):
     if found_teams:
         for team in found_teams:
             title_count = df[df['Winner'] == team].shape[0]
-            seasons = df[df['Winner'] == team]['Sezon'].tolist()
+            seasons = df[df['Winner'] == team]['Season'].tolist()
             st.success(f"✅ {team} has won the UEFA Champions League {title_count} times!")
-            st.write(f"Winning seasons: {', '.join(seasons)}")
+            st.write(f"Winning seasons: {', '.join(map(str, seasons))}")
     else:
         st.error(f"❌ {team_input} has never won the UEFA Champions League.")
 
